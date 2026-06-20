@@ -1,0 +1,113 @@
+---
+import "../styles/global.css";
+import { LiveMonitor } from "../components/LiveMonitor";
+---
+
+<!doctype html>
+<html lang="id" class="dark">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		
+		<!-- Google Fonts for Cyber Aesthetics -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;550;700;800;900&family=Space+Grotesk:wght@400;550;700&display=swap"
+			rel="stylesheet"
+		/>
+		
+		<!-- SEO Meta Tags -->
+		<title>Keryx Live Miner Monitor — Real-time Address & Balance Telemetry</title>
+		<meta
+			name="description"
+			content="Live monitoring dashboard for Keryx Labs BlockDAG wallet address balance. Update telemetry in real-time every 1 second with live price charts and transaction feeds."
+		/>
+		<meta
+			name="keywords"
+			content="Keryx Labs, Keryx Mining, BlockDAG, Live Balance, Keryx Explorer, Real-time telemetry, KRX Token"
+		/>
+		<meta name="author" content="sugaB" />
+
+		<style>
+			/* Futuristic typography mapping */
+			h1, h2, h3, h4, h5, h6 {
+				font-family: "Space Grotesk", sans-serif;
+			}
+			body {
+				font-family: "Outfit", sans-serif;
+			}
+		</style>
+	</head>
+	<body class="bg-background text-foreground min-h-screen flex flex-col relative">
+		
+		<!-- Top Navigation Bar -->
+		<header class="relative z-10 border-b border-border/20 bg-background/60 backdrop-blur-md sticky top-0 animate-cyber-glow">
+			<div class="max-w-5xl mx-auto px-4 py-3.5 flex justify-between items-center">
+				<div class="flex items-center gap-3">
+					<div class="relative flex items-center justify-center h-9 w-9 rounded-lg bg-primary shadow-[0_0_15px_oklch(0.85 0.25 140 / 0.5)] border border-primary/20 shrink-0">
+						<svg
+							class="h-5 w-5 text-primary-foreground"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="3"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+						</svg>
+					</div>
+					<div>
+						<div class="flex items-center gap-1.5">
+							<span class="text-[9px] font-black text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded font-mono">
+								BLOCKDAG EXPLORER
+							</span>
+							<span class="h-1.5 w-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_oklch(0.85 0.25 140)]"></span>
+						</div>
+						<h2 class="text-sm font-black tracking-widest text-foreground uppercase mt-0.5">
+							Keryx<span class="text-primary">.</span>Labs Telemetry
+						</h2>
+					</div>
+				</div>
+
+				<div class="flex items-center gap-3">
+					<a
+						href="https://keryx-labs.com"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-[10px] font-mono text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 uppercase tracking-wider font-bold border border-border/20 px-2.5 py-1 rounded bg-secondary/20"
+					>
+						Keryx Labs Website
+					</a>
+				</div>
+			</div>
+		</header>
+
+		<!-- Main Application -->
+		<main class="flex-grow flex items-center relative">
+			<LiveMonitor client:load />
+		</main>
+
+		<!-- Footer -->
+		<footer class="relative z-10 border-t border-border/10 bg-background/80 backdrop-blur-md py-6 mt-auto">
+			<div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-muted-foreground font-mono">
+				<div>
+					<p class="text-foreground/80 font-bold">
+						&copy; {new Date().getFullYear()} Keryx Live Monitor. Built with Astro &amp; Shadcn.
+					</p>
+					<p class="mt-0.5 text-[10px] text-muted-foreground/60">
+						Client-side 1s polling connection to official Keryx JSON-API nodes.
+					</p>
+				</div>
+				<div class="flex items-center gap-4">
+					<span class="text-[10px] text-primary/70 font-bold border border-primary/20 px-2 py-0.5 rounded bg-primary/5 uppercase">
+						Node Status: Synced
+					</span>
+				</div>
+			</div>
+		</footer>
+	</body>
+</html>
