@@ -130,6 +130,7 @@ export function LiveMonitor() {
     return () => clearInterval(interval)
   }, [isAuthenticated])
 
+  // Target signature hash for security check
   const TARGET_HASH = "22b81b05305bafe315ea73ee9d3ac49c509f2184eda03fa898150a54587885ae"
 
   // Cryptographic hashing helper (SHA-256)
