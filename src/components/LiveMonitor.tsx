@@ -2,15 +2,15 @@ import React, { useState, useEffect, useRef } from "react"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { 
-  Play, 
-  Pause, 
-  Volume2, 
-  VolumeX, 
-  Edit2, 
-  Check, 
-  X, 
-  Copy, 
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Edit2,
+  Check,
+  X,
+  Copy,
   ExternalLink,
   Coins,
   TrendingUp,
@@ -19,7 +19,11 @@ import {
   Unlock,
   Eye,
   EyeOff,
-  ShieldAlert
+  ShieldAlert,
+  Terminal,
+  Cpu,
+  Layers,
+  Activity
 } from "lucide-react"
 
 // Types
@@ -31,30 +35,30 @@ interface WalletConfig {
 
 // Initial Preset Wallets
 const INITIAL_WALLETS: WalletConfig[] = [
-  { 
-    id: "1", 
-    name: "Wallet 1", 
-    address: "keryx:qpk2unde53fcc92evu9ny9ux8c2nfr7xucllelzczwmrhpcfx3tsuhdqx5snf" 
+  {
+    id: "1",
+    name: "Wallet 1",
+    address: "keryx:qz24jv7cjxqqfp3lxkgxl4gg9j6s8avac44mqml2murzgpccc0kpwnjvvnxat"
   },
-  { 
-    id: "2", 
-    name: "Wallet 2", 
-    address: "keryx:qqy7gqxd5xhvr2l2er2ksmaplre22369qnc4edug88kg8y440g0ag2u2ekq73" 
+  {
+    id: "2",
+    name: "Wallet 2",
+    address: "keryx:qqy7gqxd5xhvr2l2er2ksmaplre22369qnc4edug88kg8y440g0ag2u2ekq73"
   },
-  { 
-    id: "3", 
-    name: "Wallet 3", 
-    address: "keryx:qradtnu35xjnmmnlz5ctyurg883pfk029evdly8t9vfqyvp3qt9dz2dhs44n4" 
+  {
+    id: "3",
+    name: "Wallet 3",
+    address: "keryx:qradtnu35xjnmmnlz5ctyurg883pfk029evdly8t9vfqyvp3qt9dz2dhs44n4"
   },
-  { 
-    id: "4", 
-    name: "Wallet 4", 
-    address: "keryx:qrzffslnza53pc6zwgvyqdc5hy2ng2z0yqlt3uvhpq25utqpsj0x27pjrxh40" 
+  {
+    id: "4",
+    name: "Wallet 4",
+    address: "keryx:qrzffslnza53pc6zwgvyqdc5hy2ng2z0yqlt3uvhpq25utqpsj0x27pjrxh40"
   },
-  { 
-    id: "5", 
-    name: "Wallet 5", 
-    address: "keryx:qprf04jxxt8y36muvadqlhh8ezumus606jjfq4h8e0ehtuwznqvfyr5nsgemg" 
+  {
+    id: "5",
+    name: "Wallet 5",
+    address: "keryx:qprf04jxxt8y36muvadqlhh8ezumus606jjfq4h8e0ehtuwznqvfyr5nsgemg"
   }
 ]
 
@@ -73,7 +77,7 @@ export function LiveMonitor() {
   const [isPlaying, setIsPlaying] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
-  
+
   // Balances tracker to calculate total combined balance
   const [balances, setBalances] = useState<Record<string, number | null>>({})
   const [priceUsd, setPriceUsd] = useState<number | null>(null)
@@ -90,6 +94,41 @@ export function LiveMonitor() {
   const [showPassword, setShowPassword] = useState(false)
   const [authError, setAuthError] = useState("")
   const [unlocking, setUnlocking] = useState(false)
+  const [isShake, setIsShake] = useState(false)
+  
+  const [terminalLogs, setTerminalLogs] = useState<string[]>([
+    "SYSINIT: Keryx live telemetry stream detected.",
+    "NETWORK: Handshake with blockdag node stable.",
+    "STATUS: Awaiting user signature authorization...",
+  ])
+
+  useEffect(() => {
+    if (isAuthenticated) return
+    const logPool = [
+      "PING: Node latency 42ms.",
+      "SECURE: Layer-2 SSL active.",
+      "SYSTEM: Memory usage 12.4 MB.",
+      "METRICS: Total hashes checked: 4,921.",
+      "API: Fetching latest BlockDAG block height...",
+      "BLOCK: Current height synced: #1,842,912.",
+      "SECURITY: Anti-bruteforce lock: ACTIVE.",
+      "DIAG: Connection quality 99.8%.",
+      "MONITOR: Port 8080 listening."
+    ]
+
+    const interval = setInterval(() => {
+      setTerminalLogs(prev => {
+        const nextLogs = [...prev]
+        if (nextLogs.length > 5) nextLogs.shift()
+        const randomLog = logPool[Math.floor(Math.random() * logPool.length)]
+        const timestamp = new Date().toLocaleTimeString("en-US", { hour12: false })
+        nextLogs.push(`[${timestamp}] ${randomLog}`)
+        return nextLogs
+      })
+    }, 2500)
+
+    return () => clearInterval(interval)
+  }, [isAuthenticated])
 
   const TARGET_HASH = "22b81b05305bafe315ea73ee9d3ac49c509f2184eda03fa898150a54587885ae"
 
@@ -106,7 +145,7 @@ export function LiveMonitor() {
     e.preventDefault()
     setAuthError("")
     setUnlocking(true)
-    
+
     // Cyber visual feedback delay
     await new Promise(resolve => setTimeout(resolve, 800))
 
@@ -117,9 +156,13 @@ export function LiveMonitor() {
         setIsAuthenticated(true)
       } else {
         setAuthError("ACCESS DENIED — SIGNATURE INVALID")
+        setIsShake(true)
+        setTimeout(() => setIsShake(false), 500)
       }
     } catch (err) {
       setAuthError("CRYPTOGRAPHIC VERIFICATION ERROR")
+      setIsShake(true)
+      setTimeout(() => setIsShake(false), 500)
     } finally {
       setUnlocking(false)
     }
@@ -219,7 +262,7 @@ export function LiveMonitor() {
       }
       return w
     })
-    
+
     // Clear balance tracker for that ID if address changed
     const oldAddress = wallets.find(w => w.id === id)?.address
     if (oldAddress !== editAddress.trim()) {
@@ -259,55 +302,171 @@ export function LiveMonitor() {
 
   if (!isAuthenticated) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-md z-10 relative flex flex-col items-center justify-center min-h-[50vh] font-mono">
-        <Card className="glass-panel border-primary/30 w-full relative overflow-hidden animate-slide-up bg-gradient-to-b from-primary/5 via-transparent to-transparent p-6">
-          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+      <div className="container mx-auto px-4 py-8 max-w-4xl z-10 relative flex items-center justify-center min-h-[70vh] font-mono">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full items-stretch">
           
-          <CardHeader className="text-center pb-2 px-0">
-            <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center mb-4 shadow-[0_0_15px_oklch(0.85 0.25 140 / 0.15)] animate-pulse-led">
-              <Lock className="h-5 w-5 text-primary" />
-            </div>
-            <CardTitle className="text-lg font-black tracking-widest text-foreground uppercase">
-              DECRYPT ENTRY NODE
-            </CardTitle>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              KERYX LABS ENCRYPTED TELEMETRY STREAM
-            </p>
-          </CardHeader>
+          {/* Left Side: Diagnostics panel */}
+          <div className="lg:col-span-5 flex flex-col justify-between glass-panel border-primary/20 p-6 rounded-xl overflow-hidden relative bg-gradient-to-b from-primary/5 via-transparent to-transparent animate-slide-up [animation-delay:100ms]">
+            <div className="cyber-scanner" />
+            
+            <div>
+              <div className="flex items-center gap-2 mb-4 border-b border-border/20 pb-3">
+                <Terminal className="text-primary h-4 w-4 animate-pulse" />
+                <span className="text-[11px] font-bold tracking-widest text-primary uppercase">
+                  COGNITIVE_NODE_DIAGNOSTICS
+                </span>
+              </div>
 
-          <CardContent className="pt-4 px-0">
-            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              {/* Quick Metrics */}
+              <div className="grid grid-cols-2 gap-3 mb-6 font-mono text-[10px]">
+                <div className="border border-border/20 bg-background/30 p-2.5 rounded relative overflow-hidden flex flex-col justify-between h-[52px]">
+                  <div className="text-muted-foreground/60 flex justify-between items-center">
+                    <span>NET NODE</span>
+                    <Layers size={10} className="text-primary/40" />
+                  </div>
+                  <div className="text-primary font-bold flex items-center gap-1.5 mt-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                    KERYX_API_1s
+                  </div>
+                </div>
+                
+                <div className="border border-border/20 bg-background/30 p-2.5 rounded relative overflow-hidden flex flex-col justify-between h-[52px]">
+                  <div className="text-muted-foreground/60 flex justify-between items-center">
+                    <span>SECURITY</span>
+                    <ShieldAlert size={10} className="text-amber-500/40" />
+                  </div>
+                  <div className="text-amber-500 font-bold mt-1">LEVEL_4_ENCR</div>
+                </div>
+                
+                <div className="border border-border/20 bg-background/30 p-2.5 rounded relative overflow-hidden flex flex-col justify-between h-[52px]">
+                  <div className="text-muted-foreground/60 flex justify-between items-center">
+                    <span>CPU LOAD</span>
+                    <Cpu size={10} className="text-primary/40" />
+                  </div>
+                  <div className="text-primary font-bold mt-1">3.4% ACTIVE</div>
+                </div>
+                
+                <div className="border border-border/20 bg-background/30 p-2.5 rounded relative overflow-hidden flex flex-col justify-between h-[52px]">
+                  <div className="text-muted-foreground/60 flex justify-between items-center">
+                    <span>PORT ACCESS</span>
+                    <Wifi size={10} className="text-primary/40" />
+                  </div>
+                  <div className="text-primary font-bold mt-1">TUNNEL_SECURE</div>
+                </div>
+              </div>
+
+              {/* Simulated Live Console logs */}
               <div className="space-y-2">
-                <label htmlFor="access-code" className="text-[9px] font-bold tracking-widest text-primary/80 uppercase block">
-                  SECURE ACCESS KEY
-                </label>
+                <span className="text-[9px] font-bold tracking-widest text-muted-foreground/75 uppercase block mb-1">
+                  LIVE SECURE STREAM FEED:
+                </span>
+                <div className="bg-background/80 border border-border/30 rounded p-3 h-44 overflow-y-auto font-mono text-[9px] text-primary/80 space-y-1.5 select-none leading-relaxed scrollbar-thin">
+                  {terminalLogs.map((log, i) => (
+                    <div key={i} className="flex gap-1.5 font-mono">
+                      <span className="text-primary/40 shrink-0">&gt;</span>
+                      <span className="break-all">{log}</span>
+                    </div>
+                  ))}
+                  <div className="flex gap-1 animate-pulse text-primary/60">
+                    <span className="text-primary/40">&gt;</span>
+                    <span>AWAITING SIGNATURE...</span>
+                    <span className="h-3 w-1.5 bg-primary/60 inline-block align-middle ml-0.5" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-border/10 pt-4 mt-6 flex justify-between items-center text-[9px] text-muted-foreground/45 font-mono">
+              <span>SYS_VERSION: 1.0.4b</span>
+              <span>PACKET_LOSS: 0.00%</span>
+            </div>
+          </div>
+
+          {/* Right Side: The password input card */}
+          <div className={`lg:col-span-7 flex flex-col justify-center glass-panel border-primary/30 p-8 rounded-xl overflow-hidden relative bg-gradient-to-b from-primary/5 via-transparent to-transparent ${
+            isShake ? "animate-shake border-destructive/50" : "animate-slide-up [animation-delay:200ms]"
+          }`}>
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            
+            <div className="text-center mb-6">
+              {/* Holographic Lock Graphic */}
+              <div className="relative w-28 h-28 mx-auto mb-4 flex items-center justify-center">
+                {/* Outer rotating dash circle */}
+                <div className="absolute inset-0 border border-dashed border-primary/20 rounded-full animate-spin [animation-duration:16s]" />
+                {/* Counter-rotating dash circle */}
+                <div className="absolute inset-2 border border-dashed border-primary/40 rounded-full animate-spin [animation-duration:8s] [animation-direction:reverse]" />
+                {/* Static target grid rings */}
+                <div className="absolute inset-4 border border-border/10 rounded-full" />
+                <div className="absolute inset-6 border border-border/5 rounded-full" />
+                {/* Inner glowing lock icon holder */}
+                <div className="absolute inset-8 bg-primary/5 border border-primary/25 rounded-full flex items-center justify-center shadow-[0_0_20px_oklch(0.85_0.25_140_/_0.15)] animate-pulse-led">
+                  {unlocking ? (
+                    <Activity className="h-5 w-5 text-primary animate-spin" />
+                  ) : (
+                    <Lock className="h-5 w-5 text-primary" />
+                  )}
+                </div>
+              </div>
+
+              <h2 className="text-lg font-black tracking-widest text-foreground uppercase font-heading">
+                DECRYPT GATEWAY NODE
+              </h2>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                AUTHORIZED SIGNATURE DECRYPTOR STREAM
+              </p>
+            </div>
+
+            <form onSubmit={handleAuthSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label htmlFor="access-code" className="text-[9px] font-bold tracking-widest text-primary/80 uppercase block">
+                    SECURE ACCESS KEY SIGNATURE
+                  </label>
+                  <span className="text-[9px] font-mono text-muted-foreground/60 uppercase">
+                    {passwordInput.length} / 9 DIGITS
+                  </span>
+                </div>
                 <div className="relative">
                   <Input
                     id="access-code"
                     type={showPassword ? "text" : "password"}
                     value={passwordInput}
                     onChange={(e) => {
-                      setPasswordInput(e.target.value)
+                      setPasswordInput(e.target.value.substring(0, 15))
                       if (authError) setAuthError("")
                     }}
                     placeholder="••••••••••••"
-                    className="pr-10 tracking-widest"
+                    className="pr-12 tracking-widest text-center text-base h-11 bg-background/40 border-primary/25 hover:border-primary/40 focus:border-primary focus:ring-primary/40"
                     disabled={unlocking}
                     autoFocus
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                     disabled={unlocking}
                   >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
+                </div>
+
+                {/* 9 Glowing Key Status Indicators */}
+                <div className="flex justify-center gap-1.5 py-1.5">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-1.5 w-6 rounded-sm transition-all duration-300 ${
+                        passwordInput.length > i
+                          ? "bg-primary shadow-[0_0_8px_oklch(0.85_0.25_140)] translate-y-0 opacity-100"
+                          : "bg-muted-foreground/15 border border-border/5 translate-y-0.5 opacity-50"
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
 
               {authError && (
-                <div className="flex items-center gap-2 text-destructive border border-destructive/20 bg-destructive/5 px-3 py-2 rounded-md animate-fade-in text-[11px] font-bold">
+                <div className="flex items-center gap-2 text-destructive border border-destructive/25 bg-destructive/5 px-3.5 py-2.5 rounded-md animate-fade-in text-[10px] font-bold uppercase tracking-wider">
                   <ShieldAlert size={14} className="shrink-0" />
                   <span>{authError}</span>
                 </div>
@@ -316,36 +475,36 @@ export function LiveMonitor() {
               <Button
                 type="submit"
                 disabled={unlocking || !passwordInput}
-                className="w-full flex items-center justify-center gap-2 h-10 font-bold uppercase tracking-wider text-xs border border-primary/20 bg-primary/10 hover:bg-primary/20 hover:text-primary transition-all shadow-[0_0_10px_oklch(0.85 0.25 140 / 0.1)] active:scale-[0.98] cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 h-11 font-bold uppercase tracking-wider text-xs border border-primary/20 bg-primary/10 hover:bg-primary/20 hover:text-primary transition-all shadow-[0_0_15px_oklch(0.85_0.25_140_/_0.1)] active:scale-[0.98] cursor-pointer"
               >
                 {unlocking ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    <span>DECRYPTING...</span>
+                    <span>DECRYPTING DATAFEED...</span>
                   </>
                 ) : (
                   <>
                     <Unlock size={13} />
-                    <span>AUTHENTICATE</span>
+                    <span>AUTHENTICATE SYSTEM</span>
                   </>
                 )}
               </Button>
             </form>
-          </CardContent>
-          
-          <CardFooter className="pt-2 pb-0 px-0 flex justify-center">
-            <span className="text-[9px] text-muted-foreground/40 text-center uppercase tracking-widest">
-              AUTHORIZED ACCESS ONLY • SECURED VIA SHA-256
-            </span>
-          </CardFooter>
-        </Card>
+
+            <div className="mt-6 border-t border-border/10 pt-4 flex justify-between items-center text-[8px] text-muted-foreground/35 tracking-widest font-mono uppercase">
+              <span>SECURED BY SHA-256</span>
+              <span>NODE CONSOLE v1.8.4</span>
+            </div>
+          </div>
+
+        </div>
       </div>
     )
   }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl z-10 relative">
-      
+
       {/* Header Info Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6 animate-slide-up stagger-1">
         <div>
@@ -414,7 +573,7 @@ export function LiveMonitor() {
         <Card className="glass-panel border-primary/30 relative overflow-hidden bg-gradient-to-r from-primary/5 via-transparent to-primary/5">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-              
+
               {/* Portfolio Balance */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-1.5">
@@ -548,16 +707,16 @@ function WalletCard({
   onBalanceUpdate
 }: WalletCardProps) {
   const [balanceSompi, setBalanceSompi] = useState<number | null>(null)
-  
+
   // Server-safe initial status: if address is provided, it starts as 'loading', otherwise 'empty'
   const [status, setStatus] = useState<"empty" | "loading" | "success" | "error">(() => {
     return wallet.address.trim() !== "" ? "loading" : "empty"
   })
-  
+
   const [flash, setFlash] = useState(false)
   const [copied, setCopied] = useState(false)
   const [tick, setTick] = useState(false)
-  
+
   const audioCtxRef = useRef<AudioContext | null>(null)
 
   // Sound generator on increase
@@ -569,23 +728,23 @@ function WalletCard({
       }
       const ctx = audioCtxRef.current
       if (ctx.state === "suspended") ctx.resume()
-      
+
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.connect(gain)
       gain.connect(ctx.destination)
-      
+
       const now = ctx.currentTime
       osc.type = "sine"
       osc.frequency.setValueAtTime(987.77, now) // B5 beep
       osc.frequency.exponentialRampToValueAtTime(1479.98, now + 0.12) // F#6
-      
+
       gain.gain.setValueAtTime(0.12, now)
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2)
-      
+
       osc.start(now)
       osc.stop(now + 0.2)
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Copy helper
@@ -611,15 +770,15 @@ function WalletCard({
     const getBalance = async () => {
       setTick(true)
       setTimeout(() => setTick(false), 150)
-      
+
       try {
         const res = await fetch(`https://keryx-labs.com/api/v1/addresses/${encodeURIComponent(trimmedAddress)}/balance`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json()
-        
+
         if (data && typeof data.balance_sompi === "number") {
           const newBalance = data.balance_sompi
-          
+
           setBalanceSompi(prev => {
             if (prev !== null && newBalance > prev) {
               setFlash(true)
@@ -628,7 +787,7 @@ function WalletCard({
             }
             return newBalance
           })
-          
+
           // Update parent state
           onBalanceUpdate(newBalance)
           setStatus("success")
@@ -645,7 +804,7 @@ function WalletCard({
 
     // Initial fetch
     getBalance()
-    
+
     const interval = setInterval(getBalance, 1000)
     return () => clearInterval(interval)
   }, [wallet.address, isPlaying])
@@ -660,9 +819,8 @@ function WalletCard({
   }, [wallet.address])
 
   return (
-    <Card className={`glass-panel border-primary/20 relative overflow-hidden transition-all duration-300 ${
-      flash ? "shadow-[0_0_25px_oklch(0.85 0.25 140 / 0.25)] border-primary/60 scale-[1.01]" : ""
-    }`}>
+    <Card className={`glass-panel border-primary/20 relative overflow-hidden transition-all duration-300 ${flash ? "shadow-[0_0_25px_oklch(0.85 0.25 140 / 0.25)] border-primary/60 scale-[1.01]" : ""
+      }`}>
       {/* Visual pulse overlay */}
       <div className={`absolute inset-0 bg-primary/5 pointer-events-none transition-opacity duration-300 ${flash ? "opacity-100" : "opacity-0"}`} />
 
@@ -775,7 +933,7 @@ function WalletCard({
               <span className="text-[9px] font-mono font-bold tracking-widest text-muted-foreground uppercase mb-0.5">
                 Live Balance
               </span>
-              
+
               {status === "empty" && (
                 <span className="text-sm font-bold font-mono text-muted-foreground/30 mt-0.5">
                   NO ADDRESS
