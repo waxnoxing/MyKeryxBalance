@@ -14,7 +14,9 @@ import {
   ExternalLink,
   Coins,
   TrendingUp,
-  Wifi
+  Wifi,
+  Trash2,
+  Plus
 } from "lucide-react"
 
 // Types
@@ -84,7 +86,7 @@ export function LiveMonitor() {
       const saved = localStorage.getItem("keryx_monitored_wallets_v3")
       if (saved) {
         const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length === 5) {
+        if (Array.isArray(parsed)) {
           setWallets(parsed)
         }
       }
@@ -168,6 +170,27 @@ export function LiveMonitor() {
       saveWallets(INITIAL_WALLETS)
       setEditingId(null)
     }
+  }
+
+  const addWallet = (address: string) => {
+    const newId = Date.now().toString()
+    const nextWalletNum = wallets.length + 1
+    const newWallet: WalletConfig = {
+      id: newId,
+      name: `Wallet ${nextWalletNum}`,
+      address: address
+    }
+    saveWallets([...wallets, newWallet])
+  }
+
+  const deleteWallet = (id: string) => {
+    const updated = wallets.filter(w => w.id !== id)
+    saveWallets(updated)
+    setBalances(prev => {
+      const copy = { ...prev }
+      delete copy[id]
+      return copy
+    })
   }
 
   // Calculation of aggregate stats
@@ -302,7 +325,7 @@ export function LiveMonitor() {
                 <div className="flex flex-col gap-1.5 font-mono text-[11px] text-muted-foreground">
                   <div className="flex justify-between">
                     <span>Active Wallet Slots</span>
-                    <span className="text-foreground font-bold">{activeWalletsCount} / 5</span>
+                    <span className="text-foreground font-bold">{activeWalletsCount} / {wallets.length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Response Health</span>
@@ -316,7 +339,7 @@ export function LiveMonitor() {
         </Card>
       </div>
 
-      {/* Grid of 5 Wallets */}
+      {/* Grid of Wallets */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up stagger-3">
         {wallets.map((wallet) => (
           <WalletCard
@@ -332,9 +355,11 @@ export function LiveMonitor() {
             onSave={saveEdit}
             onCancel={cancelEdit}
             onEditStart={startEditing}
+            onDelete={deleteWallet}
             onBalanceUpdate={(sompi) => handleBalanceUpdate(wallet.id, sompi)}
           />
         ))}
+        <AddWalletCard onAdd={addWallet} />
       </div>
 
       {/* Background Cyber Styling */}
@@ -357,6 +382,7 @@ interface WalletCardProps {
   onSave: (id: string) => void
   onCancel: () => void
   onEditStart: (w: WalletConfig) => void
+  onDelete: (id: string) => void
   onBalanceUpdate: (sompi: number | null) => void
 }
 
@@ -372,6 +398,7 @@ function WalletCard({
   onSave,
   onCancel,
   onEditStart,
+  onDelete,
   onBalanceUpdate
 }: WalletCardProps) {
   const [balanceSompi, setBalanceSompi] = useState<number | null>(null)
@@ -511,15 +538,28 @@ function WalletCard({
           </CardTitle>
         </div>
 
-        {/* Edit Button */}
+        {/* Edit & Delete Buttons */}
         {!isEditing && (
-          <button
-            onClick={() => onEditStart(wallet)}
-            className="p-1 rounded text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-            title="Edit wallet config"
-          >
-            <Edit2 size={12} />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onEditStart(wallet)}
+              className="p-1 rounded text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+              title="Edit wallet config"
+            >
+              <Edit2 size={12} />
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm(`Hapus monitoring untuk ${wallet.name || 'dompet ini'}?`)) {
+                  onDelete(wallet.id)
+                }
+              }}
+              className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+              title="Hapus wallet"
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
         )}
       </CardHeader>
 
@@ -649,6 +689,96 @@ function WalletCard({
           </a>
         </CardFooter>
       )}
+    </Card>
+  )
+}
+
+// Sub-component: AddWalletCard
+interface AddWalletCardProps {
+  onAdd: (address: string) => void
+}
+
+function AddWalletCard({ onAdd }: AddWalletCardProps) {
+  const [address, setAddress] = useState("")
+  const [isAdding, setIsAdding] = useState(false)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!address.trim()) return
+    onAdd(address.trim())
+    setAddress("")
+    setIsAdding(false)
+  }
+
+  if (!isAdding) {
+    return (
+      <Card 
+        onClick={() => setIsAdding(true)}
+        className="glass-panel border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5 transition-all duration-300 flex flex-col items-center justify-center min-h-[220px] cursor-pointer group"
+      >
+        <div className="flex flex-col items-center gap-3 text-muted-foreground group-hover:text-primary transition-colors">
+          <div className="p-3 bg-secondary/20 rounded-full border border-border/20 group-hover:border-primary/30 group-hover:bg-primary/10 transition-all">
+            <Plus size={24} className="group-hover:scale-110 transition-transform" />
+          </div>
+          <span className="text-xs font-bold font-mono tracking-widest uppercase">
+            Tambah Dompet Baru
+          </span>
+        </div>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="glass-panel border-primary/30 bg-gradient-to-b from-primary/5 via-transparent to-primary/5 min-h-[220px] flex flex-col justify-between">
+      <CardHeader className="p-4 pb-2 border-b border-border/10 flex flex-row items-center justify-between">
+        <CardTitle className="text-xs font-bold text-foreground font-heading uppercase tracking-wider flex items-center gap-1.5">
+          <Plus size={12} className="text-primary" /> Tambah Alamat
+        </CardTitle>
+        <button
+          onClick={() => setIsAdding(false)}
+          className="p-1 rounded text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+        >
+          <X size={12} />
+        </button>
+      </CardHeader>
+      
+      <CardContent className="p-4 pt-3 flex-grow flex flex-col justify-center">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div>
+            <label className="text-[9px] font-bold font-mono tracking-widest text-primary/80 uppercase block mb-1">
+              Keryx Address
+            </label>
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="keryx:..."
+              className="h-9 text-xs font-mono bg-background/40"
+              autoFocus
+            />
+          </div>
+          
+          <div className="flex gap-2 justify-end mt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAdding(false)}
+              className="h-8 text-[10px]"
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="default"
+              size="sm"
+              disabled={!address.trim()}
+              className="h-8 text-[10px] font-semibold"
+            >
+              Tambah
+            </Button>
+          </div>
+        </form>
+      </CardContent>
     </Card>
   )
 }
