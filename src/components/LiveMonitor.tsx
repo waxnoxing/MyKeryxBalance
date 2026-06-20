@@ -14,7 +14,12 @@ import {
   ExternalLink,
   Coins,
   TrendingUp,
-  Wifi
+  Wifi,
+  Lock,
+  Unlock,
+  Eye,
+  EyeOff,
+  ShieldAlert
 } from "lucide-react"
 
 // Types
@@ -77,6 +82,73 @@ export function LiveMonitor() {
   // Edit Form State
   const [editName, setEditName] = useState("")
   const [editAddress, setEditAddress] = useState("")
+
+  // Authentication States
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+  const [checkingAuth, setCheckingAuth] = useState<boolean>(true)
+  const [passwordInput, setPasswordInput] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [authError, setAuthError] = useState("")
+  const [unlocking, setUnlocking] = useState(false)
+
+  const TARGET_HASH = "22b81b05305bafe315ea73ee9d3ac49c509f2184eda03fa898150a54587885ae"
+
+  // Cryptographic hashing helper (SHA-256)
+  const hashPassword = async (password: string): Promise<string> => {
+    const msgBuffer = new TextEncoder().encode(password)
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("")
+  }
+
+  // Handle Authentication submit
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAuthError("")
+    setUnlocking(true)
+    
+    // Cyber visual feedback delay
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    try {
+      const hashed = await hashPassword(passwordInput)
+      if (hashed === TARGET_HASH) {
+        localStorage.setItem("keryx_monitored_auth_hash", hashed)
+        setIsAuthenticated(true)
+      } else {
+        setAuthError("ACCESS DENIED — SIGNATURE INVALID")
+      }
+    } catch (err) {
+      setAuthError("CRYPTOGRAPHIC VERIFICATION ERROR")
+    } finally {
+      setUnlocking(false)
+    }
+  }
+
+  // Handle Lock
+  const handleLock = () => {
+    try {
+      localStorage.removeItem("keryx_monitored_auth_hash")
+      setIsAuthenticated(false)
+      setPasswordInput("")
+    } catch (e) {
+      console.warn("Storage write restriction:", e)
+    }
+  }
+
+  // Check stored credentials on mount
+  useEffect(() => {
+    try {
+      const savedHash = localStorage.getItem("keryx_monitored_auth_hash")
+      if (savedHash === TARGET_HASH) {
+        setIsAuthenticated(true)
+      }
+    } catch (e) {
+      console.warn("Storage access restricted:", e)
+    } finally {
+      setCheckingAuth(false)
+    }
+  }, [])
 
   // Safe localStorage Load
   useEffect(() => {
@@ -176,6 +248,101 @@ export function LiveMonitor() {
   const totalUsd = priceUsd ? totalKrx * priceUsd : null
   const activeWalletsCount = wallets.filter(w => w.address.trim() !== "").length
 
+  if (checkingAuth) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-md z-10 relative flex flex-col items-center justify-center min-h-[50vh] font-mono">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
+        <span className="text-xs text-muted-foreground/60 tracking-wider">SECURE LINK INITIALIZING...</span>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-md z-10 relative flex flex-col items-center justify-center min-h-[50vh] font-mono">
+        <Card className="glass-panel border-primary/30 w-full relative overflow-hidden animate-slide-up bg-gradient-to-b from-primary/5 via-transparent to-transparent p-6">
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+          
+          <CardHeader className="text-center pb-2 px-0">
+            <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center mb-4 shadow-[0_0_15px_oklch(0.85 0.25 140 / 0.15)] animate-pulse-led">
+              <Lock className="h-5 w-5 text-primary" />
+            </div>
+            <CardTitle className="text-lg font-black tracking-widest text-foreground uppercase">
+              DECRYPT ENTRY NODE
+            </CardTitle>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              KERYX LABS ENCRYPTED TELEMETRY STREAM
+            </p>
+          </CardHeader>
+
+          <CardContent className="pt-4 px-0">
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="access-code" className="text-[9px] font-bold tracking-widest text-primary/80 uppercase block">
+                  SECURE ACCESS KEY
+                </label>
+                <div className="relative">
+                  <Input
+                    id="access-code"
+                    type={showPassword ? "text" : "password"}
+                    value={passwordInput}
+                    onChange={(e) => {
+                      setPasswordInput(e.target.value)
+                      if (authError) setAuthError("")
+                    }}
+                    placeholder="••••••••••••"
+                    className="pr-10 tracking-widest"
+                    disabled={unlocking}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                    disabled={unlocking}
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
+
+              {authError && (
+                <div className="flex items-center gap-2 text-destructive border border-destructive/20 bg-destructive/5 px-3 py-2 rounded-md animate-fade-in text-[11px] font-bold">
+                  <ShieldAlert size={14} className="shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={unlocking || !passwordInput}
+                className="w-full flex items-center justify-center gap-2 h-10 font-bold uppercase tracking-wider text-xs border border-primary/20 bg-primary/10 hover:bg-primary/20 hover:text-primary transition-all shadow-[0_0_10px_oklch(0.85 0.25 140 / 0.1)] active:scale-[0.98] cursor-pointer"
+              >
+                {unlocking ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span>DECRYPTING...</span>
+                  </>
+                ) : (
+                  <>
+                    <Unlock size={13} />
+                    <span>AUTHENTICATE</span>
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+          
+          <CardFooter className="pt-2 pb-0 px-0 flex justify-center">
+            <span className="text-[9px] text-muted-foreground/40 text-center uppercase tracking-widest">
+              AUTHORIZED ACCESS ONLY • SECURED VIA SHA-256
+            </span>
+          </CardFooter>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl z-10 relative">
       
@@ -228,6 +395,16 @@ export function LiveMonitor() {
             className="text-[10px] h-9"
           >
             Reset Default
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLock}
+            className="text-[10px] h-9 border-destructive/30 hover:border-destructive/60 hover:bg-destructive/10 text-destructive/80 hover:text-destructive transition-all"
+            title="Kunci Dashboard"
+          >
+            <Lock size={12} className="mr-1 text-destructive" /> Lock
           </Button>
         </div>
       </div>
